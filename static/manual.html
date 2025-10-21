@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Manual del Lenguaje LA</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background-color: #1e1e1e; /* Fondo oscuro principal */
+            color: #d4d4d4; /* Color de texto claro */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background: #252526; /* Fondo de la cabecera (similar al IDE) */
+            color: #50fa7b; /* Verde neón para el título */
+            padding: 10px 20px;
+            font-size: 1.4em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #manual-content {
+            flex: 1;
+            overflow-y: auto; /* Permite desplazamiento */
+            padding: 20px;
+            max-width: 900px; /* Limita el ancho del contenido */
+            width: 100%;
+            margin: 0 auto; /* Centra el contenido */
+            line-height: 1.6;
+        }
+
+        /* Estilos de encabezados */
+        #manual-content h1, #manual-content h2 {
+            color: #d4d4d4; /* Color similar al IDE */
+            border-bottom: 2px solid #50fa7b; /* Línea verde vibrante */
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        #manual-content h3 {
+            color: #d4d4d4;
+            margin-top: 20px;
+        }
+
+        /* Bloques de código (similares a la salida 'pre' del IDE) */
+        pre {
+            background: #000000;
+            color: #f8f8f2;
+            padding: 12px;
+            margin: 15px 0;
+            overflow-x: auto;
+            border-radius: 6px;
+            font-size: 14px;
+            white-space: pre-wrap; /* Permite envolver el código */
+        }
+        
+        /* Código en línea */
+        code {
+            background: #333;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.95em;
+            color: #50fa7b;
+        }
+
+        /* Estilo de tabla */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #2d2d30; /* Color de encabezado de tabla */
+            color: #d4d4d4;
+        }
+
+    </style>
+</head>
+
+<body>
+    <header>
+        <div>🐍 Manual del Lenguaje LA</div>
+    </header>
+
+    <div id="manual-content">
+        <h1>Manual de Referencia del Lenguaje LA</h1>
+        <p>Este documento describe la sintaxis, las palabras clave y el funcionamiento del intérprete LA, un lenguaje sencillo diseñado para la ejecución de scripts con control de flujo y funciones.</p>
+
+        <h2>1. Variables y Tipos de Datos</h2>
+        <p>Las variables deben ser declaradas usando la palabra clave `var` y son de tipado dinámico.</p>
+
+        <h3>1.1 Declaración y Asignación</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Característica</th>
+                    <th>Sintaxis</th>
+                    <th>Ejemplo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Declaración</td>
+                    <td><code>var &lt;nombre&gt; = &lt;valor&gt;</code></td>
+                    <td><code>var edad = 20</code></td>
+                </tr>
+                <tr>
+                    <td>Números (int/float)</td>
+                    <td>Se admiten valores enteros y decimales.</td>
+                    <td><code>var precio = 15.99</code></td>
+                </tr>
+                <tr>
+                    <td>Cadenas (Strings)</td>
+                    <td>Deben ir entre comillas dobles.</td>
+                    <td><code>var nombre = "César"</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>1.2 Operaciones y Funciones Integradas</h3>
+        <p>Se soportan operaciones aritméticas básicas y concatenación:</p>
+        <pre><code>var x = 10
+var y = 5
+print(x + y)    
+print("Resultado: " + str(x * y)) 
+</code></pre>
+        <p>Para la conversión de tipos en la salida, use las funciones integradas seguras: <code>str()</code>, <code>int()</code>, y <code>float()</code>.</p>
+
+        ---
+
+        <h2>2. Control de Flujo: Condicionales</h2>
+        <p>El control de flujo se maneja con la estructura <code>if/else</code>. La **indentación** (sangría) es obligatoria y define los bloques de código.</p>
+
+        <h3>2.1 Estructura IF/ELSE</h3>
+        <pre><code>var edad = 22
+if edad >= 18:
+    print("Mayor de edad")
+else:
+    print("Menor de edad")
+</code></pre>
+        <p>Se admiten los operadores de comparación habituales: <code>==</code>, <code>!=</code>, <code>></code>, <code><</code>, <code>>=</code>, <code><=</code>.</p>
+        
+        ---
+
+        <h2>3. Funciones</h2>
+        <p>Las funciones se definen con la palabra clave <code>func</code> y pueden incluir parámetros, así como retornar valores.</p>
+
+        <h3>3.1 Definición y Retorno</h3>
+        <p>Use la instrucción <code>return</code> para devolver un valor. Esto finaliza la ejecución de la función inmediatamente.</p>
+        
+        <pre><code>func sumar(a, b):
+    return a + b
+
+var resultado = sumar(10, 5)
+print("La suma es " + str(resultado)) 
+</code></pre>
+
+        <h3>3.2 Scoping (Alcance de Variables)</h3>
+        <p>El lenguaje soporta funciones anidadas y jerarquía de variables:</p>
+        <ul>
+            <li>**Parámetros y Variables Locales:** Tienen prioridad y solo existen dentro de la función.</li>
+            <li>**Variables Globales:** Todas las variables declaradas fuera de las funciones son accesibles por cualquier función.</li>
+        </ul>
+
+        <pre><code>func cuadrado(n):
+    return n * n
+
+func calcular_area(lado1, lado2):
+    var sq1 = cuadrado(lado1) 
+    var sq2 = cuadrado(lado2)
+    return sq1 + sq2
+
+print(calcular_area(3, 4)) 
+</code></pre>
+        
+        ---
+
+        <h2>4. Impresión de Salida</h2>
+        <p>Utilice la función <code>print()</code> para mostrar el resultado de cualquier expresión evaluada en la consola.</p>
+
+        <pre><code>var saludo = "¡Hola!"
+print(saludo)
+print(15 * 2)
+</code></pre>
+
+    </div>
+</body>
+</html>

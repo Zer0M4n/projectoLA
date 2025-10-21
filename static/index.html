@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+   
+  <meta charset="UTF-8" />
+    <title>Mini IDE Pyra - Monaco Edition</title>
+    <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: #252526;
+      color: #50fa7b;
+      padding: 10px 20px;
+      font-size: 1.4em;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #editor {
+      flex: 2;
+      height: 100%;
+      border-right: 1px solid #333;
+    }
+
+    #right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1e1e1e;
+    }
+
+    button {
+      background: #50fa7b;
+      border: none;
+      color: #1e1e1e;
+      padding: 10px;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #69ff94;
+    }
+
+    pre {
+      background: #000000;
+      color: #f8f8f2;
+      padding: 10px;
+      flex: 1;
+      margin: 5px;
+      overflow-y: auto;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    #history {
+      background: #111;
+      padding: 10px;
+      margin: 5px;
+      flex: 1;
+      overflow-y: auto;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #ccc;
+    }
+  </style>
+</head>
+
+<body>
+    <header>
+        <div>🐍 Mini IDE Pyra - Monaco Edition</div>
+      </header>
+
+    <div id="container">
+        <div id="editor"></div>
+
+        <div id="right-panel">
+            <div>
+                <button id="runBtn">▶ Ejecutar</button>
+                <button id="clearBtn">🧹 Limpiar salida</button>
+                <button id="manualBtn">📖 Manual</button>
+              </div>
+            <h3 style="margin-left:10px;">Salida:</h3>
+           
+      <pre id="output">Listo para ejecutar tu código...</pre>
+            <h3 style="margin-left:10px;">Historial:</h3>
+            <div id="history"></div>
+         
+    </div>
+      </div>
+
+     
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+   
+  <script>
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
+    require(["vs/editor/editor.main"], function () {
+      const editor = monaco.editor.create(document.getElementById("editor"), {
+        value: 'var x = 5\nprint(x + 10)',
+        language: "python",
+        theme: "vs-dark",
+        automaticLayout: true,
+        fontSize: 14,
+        minimap: { enabled: false },
+        cursorBlinking: "blink",
+        cursorSmoothCaretAnimation: true,
+        roundedSelection: true,
+        scrollBeyondLastLine: false
+      });
+
+      const runBtn = document.getElementById("runBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const manualBtn = document.getElementById("manualBtn"); // Nuevo ID
+      const output = document.getElementById("output");
+      const historyDiv = document.getElementById("history");
+
+      // Listener para el botón Manual
+      manualBtn.addEventListener("click", () => {
+        // Redirige a la página del manual, asumiendo que se llama manual.html
+        window.open('manual.html', '_blank'); // Abre en una nueva pestaña
+        // Si quieres que se abra en la misma pestaña, usa: window.location.href = 'manual.html';
+      });
+
+
+      runBtn.addEventListener("click", async () => {
+        const code = editor.getValue();
+        output.textContent = "⏳ Ejecutando...\n";
+
+        try {
+          const res = await fetch("/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code })
+          });
+
+          const data = await res.json();
+          output.textContent = data.output || "Sin salida.";
+        } catch (err) {
+          output.textContent = "❌ Error al conectar con el servidor: " + err;
+        }
+
+        // Guardar historial
+        const entry = document.createElement("div");
+        entry.textContent = code;
+        entry.style.borderBottom = "1px solid #333";
+        historyDiv.prepend(entry);
+      });
+
+      clearBtn.addEventListener("click", () => {
+        output.textContent = "";
+        historyDiv.innerHTML = "";
+      });
+    });
+  </script>
+</body>
+
+</html>
