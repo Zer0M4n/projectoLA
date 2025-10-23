@@ -113,11 +113,12 @@ def run_code():
     
     except Exception as e:
         logger.error(f"Error en ejecución: {e}")
-        error_msg = f"❌ Error del intérprete:\n{str(e)}"
+        # IMPORTANTE: Devolver el error detallado al cliente
+        error_msg = str(e)
         return jsonify({
             "success": False,
-            "output": error_msg
-        }), 500
+            "output": error_msg if error_msg else "Error desconocido al ejecutar el código"
+        }), 200  # Cambiado a 200 para que el cliente pueda leer el mensaje
 
 @app.route("/lint", methods=["POST"])
 @validate_code_size

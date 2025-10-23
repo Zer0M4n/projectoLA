@@ -1,199 +1,454 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8" />
-    <title>Manual del Lenguaje LA</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: "Segoe UI", Arial, sans-serif;
-            background-color: #1e1e1e; /* Fondo oscuro principal */
-            color: #d4d4d4; /* Color de texto claro */
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+  <meta charset="UTF-8" />
+  <title>Mini IDE Pyra - Monaco Edition</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
 
-        header {
-            background: #252526; /* Fondo de la cabecera (similar al IDE) */
-            color: #50fa7b; /* Verde neón para el título */
-            padding: 10px 20px;
-            font-size: 1.4em;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+    header {
+      background: #252526;
+      color: #50fa7b;
+      padding: 10px 20px;
+      font-size: 1.4em;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-        #manual-content {
-            flex: 1;
-            overflow-y: auto; /* Permite desplazamiento */
-            padding: 20px;
-            max-width: 900px; /* Limita el ancho del contenido */
-            width: 100%;
-            margin: 0 auto; /* Centra el contenido */
-            line-height: 1.6;
-        }
+    #container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
 
-        /* Estilos de encabezados */
-        #manual-content h1, #manual-content h2 {
-            color: #d4d4d4; /* Color similar al IDE */
-            border-bottom: 2px solid #50fa7b; /* Línea verde vibrante */
-            padding-bottom: 5px;
-            margin-top: 30px;
-        }
-        #manual-content h3 {
-            color: #d4d4d4;
-            margin-top: 20px;
-        }
+    #editor {
+      flex: 2;
+      height: 100%;
+      border-right: 1px solid #333;
+    }
 
-        /* Bloques de código (similares a la salida 'pre' del IDE) */
-        pre {
-            background: #000000;
-            color: #f8f8f2;
-            padding: 12px;
-            margin: 15px 0;
-            overflow-x: auto;
-            border-radius: 6px;
-            font-size: 14px;
-            white-space: pre-wrap; /* Permite envolver el código */
-        }
-        
-        /* Código en línea */
-        code {
-            background: #333;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-size: 0.95em;
-            color: #50fa7b;
-        }
+    #right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1e1e1e;
+    }
 
-        /* Estilo de tabla */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-            font-size: 0.9em;
-        }
-        th, td {
-            border: 1px solid #333;
-            padding: 8px 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #2d2d30; /* Color de encabezado de tabla */
-            color: #d4d4d4;
-        }
+    button {
+      background: #50fa7b;
+      border: none;
+      color: #1e1e1e;
+      padding: 10px;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-weight: bold;
+    }
 
-    </style>
+    button:hover {
+      background: #69ff94;
+    }
+
+    button:disabled {
+      background: #444;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    pre {
+      background: #000000;
+      color: #f8f8f2;
+      padding: 10px;
+      flex: 1;
+      margin: 5px;
+      overflow-y: auto;
+      border-radius: 6px;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    #history {
+      background: #111;
+      padding: 10px;
+      margin: 5px;
+      flex: 1;
+      overflow-y: auto;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #ccc;
+    }
+
+    .history-entry {
+      padding: 8px;
+      margin-bottom: 8px;
+      background: #1a1a1a;
+      border-left: 3px solid #50fa7b;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .history-entry:hover {
+      background: #252526;
+    }
+
+    .history-timestamp {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .history-code {
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #d4d4d4;
+    }
+
+    #modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #modal-content {
+      background: #252526;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 700px;
+      max-height: 80vh;
+      overflow-y: auto;
+      color: #d4d4d4;
+    }
+
+    #modal-content h2 {
+      color: #50fa7b;
+      margin-top: 0;
+    }
+
+    #modal-content code {
+      background: #1e1e1e;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #ff79c6;
+    }
+
+    #modal-content pre {
+      background: #1e1e1e;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    .close-modal {
+      float: right;
+      font-size: 28px;
+      cursor: pointer;
+      color: #888;
+    }
+
+    .close-modal:hover {
+      color: #fff;
+    }
+
+    .error-marker {
+      color: #ff5555;
+    }
+
+    .warning-marker {
+      color: #ffb86c;
+    }
+  </style>
 </head>
 
 <body>
-    <header>
-        <div>🐍 Manual del Lenguaje LA</div>
-    </header>
+  <header>
+    <div>🐍 Mini IDE Pyra - Monaco Edition</div>
+  </header>
 
-    <div id="manual-content">
-        <h1>Manual de Referencia del Lenguaje LA</h1>
-        <p>Este documento describe la sintaxis, las palabras clave y el funcionamiento del intérprete LA, un lenguaje sencillo diseñado para la ejecución de scripts con control de flujo y funciones.</p>
+  <div id="container">
+    <div id="editor"></div>
 
-        <h2>1. Variables y Tipos de Datos</h2>
-        <p>Las variables deben ser declaradas usando la palabra clave `var` y son de tipado dinámico.</p>
+    <div id="right-panel">
+      <div>
+        <button id="runBtn">▶ Ejecutar</button>
+        <button id="clearBtn">🧹 Limpiar salida</button>
+        <button id="clearHistoryBtn">🗑️ Limpiar historial</button>
+        <button id="manualBtn">📖 Manual</button>
+      </div>
+      <h3 style="margin-left:10px;">Salida:</h3>
+      <pre id="output">Listo para ejecutar tu código...</pre>
+      <h3 style="margin-left:10px;">Historial:</h3>
+      <div id="history"></div>
+    </div>
+  </div>
 
-        <h3>1.1 Declaración y Asignación</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Característica</th>
-                    <th>Sintaxis</th>
-                    <th>Ejemplo</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Declaración</td>
-                    <td><code>var &lt;nombre&gt; = &lt;valor&gt;</code></td>
-                    <td><code>var edad = 20</code></td>
-                </tr>
-                <tr>
-                    <td>Números (int/float)</td>
-                    <td>Se admiten valores enteros y decimales.</td>
-                    <td><code>var precio = 15.99</code></td>
-                </tr>
-                <tr>
-                    <td>Cadenas (Strings)</td>
-                    <td>Deben ir entre comillas dobles.</td>
-                    <td><code>var nombre = "César"</code></td>
-                </tr>
-            </tbody>
-        </table>
+  <!-- Modal para el manual -->
+  <div id="modal">
+    <div id="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>📖 Manual de Pyra</h2>
+      
+      <h3>Variables</h3>
+      <pre>var nombre = valor
+var x = 10
+var texto = "Hola"
 
-        <h3>1.2 Operaciones y Funciones Integradas</h3>
-        <p>Se soportan operaciones aritméticas básicas y concatenación:</p>
-        <pre><code>var x = 10
-var y = 5
-print(x + y)    
-print("Resultado: " + str(x * y)) 
-</code></pre>
-        <p>Para la conversión de tipos en la salida, use las funciones integradas seguras: <code>str()</code>, <code>int()</code>, y <code>float()</code>.</p>
+# Reasignación (sin var)
+x = 20
+texto = "Mundo"</pre>
 
-        ---
-
-        <h2>2. Control de Flujo: Condicionales</h2>
-        <p>El control de flujo se maneja con la estructura <code>if/else</code>. La **indentación** (sangría) es obligatoria y define los bloques de código.</p>
-
-        <h3>2.1 Estructura IF/ELSE</h3>
-        <pre><code>var edad = 22
-if edad >= 18:
-    print("Mayor de edad")
-else:
-    print("Menor de edad")
-</code></pre>
-        <p>Se admiten los operadores de comparación habituales: <code>==</code>, <code>!=</code>, <code>></code>, <code><</code>, <code>>=</code>, <code><=</code>.</p>
-        
-        ---
-
-        <h2>3. Funciones</h2>
-        <p>Las funciones se definen con la palabra clave <code>func</code> y pueden incluir parámetros, así como retornar valores.</p>
-
-        <h3>3.1 Definición y Retorno</h3>
-        <p>Use la instrucción <code>return</code> para devolver un valor. Esto finaliza la ejecución de la función inmediatamente.</p>
-        
-        <pre><code>func sumar(a, b):
+      <h3>Funciones</h3>
+      <pre>func suma(a, b):
     return a + b
 
-var resultado = sumar(10, 5)
-print("La suma es " + str(resultado)) 
-</code></pre>
+var resultado = suma(5, 3)
+print(resultado)</pre>
 
-        <h3>3.2 Scoping (Alcance de Variables)</h3>
-        <p>El lenguaje soporta funciones anidadas y jerarquía de variables:</p>
-        <ul>
-            <li>**Parámetros y Variables Locales:** Tienen prioridad y solo existen dentro de la función.</li>
-            <li>**Variables Globales:** Todas las variables declaradas fuera de las funciones son accesibles por cualquier función.</li>
-        </ul>
+      <h3>Condicionales</h3>
+      <pre>if x > 10:
+    print("Mayor")
+elif x == 10:
+    print("Igual")
+else:
+    print("Menor")</pre>
 
-        <pre><code>func cuadrado(n):
-    return n * n
+      <h3>Bucles While</h3>
+      <pre>var i = 0
+while i < 5:
+    print(i)
+    i = i + 1</pre>
 
-func calcular_area(lado1, lado2):
-    var sq1 = cuadrado(lado1) 
-    var sq2 = cuadrado(lado2)
-    return sq1 + sq2
+      <h3>Bucles For</h3>
+      <pre>for i in range(5):
+    print(i)
 
-print(calcular_area(3, 4)) 
-</code></pre>
-        
-        ---
+for letra in "Hola":
+    print(letra)</pre>
 
-        <h2>4. Impresión de Salida</h2>
-        <p>Utilice la función <code>print()</code> para mostrar el resultado de cualquier expresión evaluada en la consola.</p>
+      <h3>Control de flujo</h3>
+      <pre>for i in range(10):
+    if i == 5:
+        break
+    if i == 3:
+        continue
+    print(i)</pre>
 
-        <pre><code>var saludo = "¡Hola!"
-print(saludo)
-print(15 * 2)
-</code></pre>
+      <h3>Funciones disponibles</h3>
+      <p><code>print()</code>, <code>len()</code>, <code>range()</code>, <code>str()</code>, <code>int()</code>, <code>float()</code>, <code>sum()</code>, <code>min()</code>, <code>max()</code>, <code>abs()</code>, <code>round()</code>, <code>sorted()</code></p>
 
+      <h3>Reglas de sintaxis</h3>
+      <ul>
+        <li>Indentación: 4 espacios (no tabs)</li>
+        <li>Bloques terminan con <code>:</code></li>
+        <li>Declaración de variables: <code>var nombre = valor</code></li>
+        <li>Reasignación de variables: <code>nombre = nuevo_valor</code> (sin var)</li>
+        <li>Comentarios con <code>#</code></li>
+      </ul>
     </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+
+  <script>
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
+    require(["vs/editor/editor.main"], function () {
+      const editor = monaco.editor.create(document.getElementById("editor"), {
+        value: `func factorial(n):
+    if n <= 1:
+        return 1
+    else:
+        return n * factorial(n - 1)
+
+var resultado = factorial(5)
+print(resultado)`,
+        language: "python",
+        theme: "vs-dark",
+        automaticLayout: true,
+        fontSize: 14,
+        minimap: { enabled: false },
+        cursorBlinking: "blink",
+        cursorSmoothCaretAnimation: true,
+        roundedSelection: true,
+        scrollBeyondLastLine: false
+      });
+
+      const runBtn = document.getElementById("runBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+      const manualBtn = document.getElementById("manualBtn");
+      const output = document.getElementById("output");
+      const historyDiv = document.getElementById("history");
+      const modal = document.getElementById("modal");
+      const closeModal = document.querySelector(".close-modal");
+
+      // --- LINT usando checker.py del servidor ---
+      async function lintCode() {
+        const code = editor.getValue();
+        try {
+          const res = await fetch("/lint", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code })
+          });
+          
+          if (!res.ok) {
+            console.error("Error en /lint:", res.status);
+            return;
+          }
+
+          const data = await res.json();
+
+          // Crear marcadores visuales de Monaco
+          const markers = data.errors.map(err => ({
+            startLineNumber: err.line || 1,
+            endLineNumber: err.line || 1,
+            startColumn: err.column || 1,
+            endColumn: 999,
+            message: err.message,
+            severity: err.severity === 'warning' 
+              ? monaco.MarkerSeverity.Warning 
+              : monaco.MarkerSeverity.Error
+          }));
+
+          monaco.editor.setModelMarkers(editor.getModel(), "lint", markers);
+        } catch (e) {
+          console.error("Error al hacer lint:", e);
+        }
+      }
+
+      // Lint automático con debounce
+      let lintTimeout;
+      editor.onDidChangeModelContent(() => {
+        clearTimeout(lintTimeout);
+        lintTimeout = setTimeout(lintCode, 800);
+      });
+
+      // Lint inicial
+      lintCode();
+
+      // --- EJECUTAR usando interpreter.py del servidor ---
+      runBtn.addEventListener("click", async () => {
+        const code = editor.getValue();
+        output.textContent = "⏳ Ejecutando...\n";
+        runBtn.disabled = true;
+
+        try {
+          const res = await fetch("/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code })
+          });
+
+          const data = await res.json();
+          
+          // Mostrar la salida (con error o sin error)
+          if (data.output) {
+            output.textContent = data.output;
+          } else {
+            output.textContent = "Sin salida.";
+          }
+
+          // Agregar al historial solo si hubo contenido
+          if (code.trim()) {
+            addToHistory(code, data.output || "Sin salida");
+          }
+        } catch (err) {
+          output.textContent = "❌ Error al conectar con el servidor:\n" + err.message + "\n\n¿El servidor está corriendo en http://localhost:5000?";
+          console.error("Error completo:", err);
+        } finally {
+          runBtn.disabled = false;
+        }
+      });
+
+      // --- AGREGAR AL HISTORIAL ---
+      function addToHistory(code, result) {
+        const entry = document.createElement("div");
+        entry.className = "history-entry";
+        
+        const timestamp = document.createElement("div");
+        timestamp.className = "history-timestamp";
+        timestamp.textContent = new Date().toLocaleTimeString();
+        
+        const codeDiv = document.createElement("div");
+        codeDiv.className = "history-code";
+        const preview = code.length > 100 ? code.slice(0, 100) + '...' : code;
+        codeDiv.textContent = preview;
+        
+        entry.appendChild(timestamp);
+        entry.appendChild(codeDiv);
+        
+        // Click para restaurar código
+        entry.addEventListener("click", () => {
+          editor.setValue(code);
+          editor.focus();
+        });
+        
+        historyDiv.insertBefore(entry, historyDiv.firstChild);
+
+        // Limitar historial a 20 entradas
+        while (historyDiv.children.length > 20) {
+          historyDiv.removeChild(historyDiv.lastChild);
+        }
+      }
+
+      // --- LIMPIAR SALIDA ---
+      clearBtn.addEventListener("click", () => {
+        output.textContent = "Listo para ejecutar tu código...";
+        monaco.editor.setModelMarkers(editor.getModel(), "lint", []);
+      });
+
+      // --- LIMPIAR HISTORIAL ---
+      clearHistoryBtn.addEventListener("click", () => {
+        historyDiv.innerHTML = "";
+      });
+
+      // --- MODAL DE MANUAL ---
+      manualBtn.addEventListener("click", () => {
+        modal.style.display = "flex";
+      });
+
+      closeModal.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.style.display = "none";
+        }
+      });
+
+      // Atajo de teclado: Ctrl+Enter para ejecutar
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+        runBtn.click();
+      });
+
+      // Atajo de teclado: ESC para cerrar modal
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+        }
+      });
+    });
+  </script>
 </body>
 </html>

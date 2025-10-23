@@ -354,17 +354,22 @@ print(resultado)`,
             body: JSON.stringify({ code })
           });
 
-          if (!res.ok) {
-            throw new Error(`Error del servidor: ${res.status}`);
+          const data = await res.json();
+          
+          // Mostrar la salida (con error o sin error)
+          if (data.output) {
+            output.textContent = data.output;
+          } else {
+            output.textContent = "Sin salida.";
           }
 
-          const data = await res.json();
-          output.textContent = data.output || "Sin salida.";
-
-          // Agregar al historial
-          addToHistory(code, data.output);
+          // Agregar al historial solo si hubo contenido
+          if (code.trim()) {
+            addToHistory(code, data.output || "Sin salida");
+          }
         } catch (err) {
-          output.textContent = "❌ Error al conectar con el servidor:\n" + err.message;
+          output.textContent = "❌ Error al conectar con el servidor:\n" + err.message + "\n\n¿El servidor está corriendo en http://localhost:5000?";
+          console.error("Error completo:", err);
         } finally {
           runBtn.disabled = false;
         }
