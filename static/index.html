@@ -2,10 +2,9 @@
 <html lang="es">
 
 <head>
-   
   <meta charset="UTF-8" />
-    <title>Mini IDE Pyra - Monaco Edition</title>
-    <style>
+  <title>Mini IDE Pyra - Monaco Edition</title>
+  <style>
     body {
       margin: 0;
       font-family: "Segoe UI", Arial, sans-serif;
@@ -61,6 +60,12 @@
       background: #69ff94;
     }
 
+    button:disabled {
+      background: #444;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
     pre {
       background: #000000;
       color: #f8f8f2;
@@ -70,6 +75,8 @@
       overflow-y: auto;
       border-radius: 6px;
       font-size: 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     #history {
@@ -82,40 +89,193 @@
       font-size: 13px;
       color: #ccc;
     }
+
+    .history-entry {
+      padding: 8px;
+      margin-bottom: 8px;
+      background: #1a1a1a;
+      border-left: 3px solid #50fa7b;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .history-entry:hover {
+      background: #252526;
+    }
+
+    .history-timestamp {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .history-code {
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #d4d4d4;
+    }
+
+    #modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #modal-content {
+      background: #252526;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 700px;
+      max-height: 80vh;
+      overflow-y: auto;
+      color: #d4d4d4;
+    }
+
+    #modal-content h2 {
+      color: #50fa7b;
+      margin-top: 0;
+    }
+
+    #modal-content code {
+      background: #1e1e1e;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #ff79c6;
+    }
+
+    #modal-content pre {
+      background: #1e1e1e;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    .close-modal {
+      float: right;
+      font-size: 28px;
+      cursor: pointer;
+      color: #888;
+    }
+
+    .close-modal:hover {
+      color: #fff;
+    }
+
+    .error-marker {
+      color: #ff5555;
+    }
+
+    .warning-marker {
+      color: #ffb86c;
+    }
   </style>
 </head>
 
 <body>
-    <header>
-        <div>🐍 Mini IDE Pyra - Monaco Edition</div>
-      </header>
+  <header>
+    <div>🐍 Mini IDE Pyra - Monaco Edition</div>
+  </header>
 
-    <div id="container">
-        <div id="editor"></div>
+  <div id="container">
+    <div id="editor"></div>
 
-        <div id="right-panel">
-            <div>
-                <button id="runBtn">▶ Ejecutar</button>
-                <button id="clearBtn">🧹 Limpiar salida</button>
-                <button id="manualBtn">📖 Manual</button>
-              </div>
-            <h3 style="margin-left:10px;">Salida:</h3>
-           
+    <div id="right-panel">
+      <div>
+        <button id="runBtn">▶ Ejecutar</button>
+        <button id="clearBtn">🧹 Limpiar salida</button>
+        <button id="clearHistoryBtn">🗑️ Limpiar historial</button>
+        <button id="manualBtn">📖 Manual</button>
+      </div>
+      <h3 style="margin-left:10px;">Salida:</h3>
       <pre id="output">Listo para ejecutar tu código...</pre>
-            <h3 style="margin-left:10px;">Historial:</h3>
-            <div id="history"></div>
-         
+      <h3 style="margin-left:10px;">Historial:</h3>
+      <div id="history"></div>
     </div>
-      </div>
+  </div>
 
-     
+  <!-- Modal para el manual -->
+  <div id="modal">
+    <div id="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>📖 Manual de Pyra</h2>
+      
+      <h3>Variables</h3>
+      <pre>var nombre = valor
+var x = 10
+var texto = "Hola"</pre>
+
+      <h3>Funciones</h3>
+      <pre>func suma(a, b):
+    return a + b
+
+var resultado = suma(5, 3)
+print(resultado)</pre>
+
+      <h3>Condicionales</h3>
+      <pre>if x > 10:
+    print("Mayor")
+elif x == 10:
+    print("Igual")
+else:
+    print("Menor")</pre>
+
+      <h3>Bucles While</h3>
+      <pre>var i = 0
+while i < 5:
+    print(i)
+    i = i + 1</pre>
+
+      <h3>Bucles For</h3>
+      <pre>for i in range(5):
+    print(i)
+
+for letra in "Hola":
+    print(letra)</pre>
+
+      <h3>Control de flujo</h3>
+      <pre>for i in range(10):
+    if i == 5:
+        break
+    if i == 3:
+        continue
+    print(i)</pre>
+
+      <h3>Funciones disponibles</h3>
+      <p><code>print()</code>, <code>len()</code>, <code>range()</code>, <code>str()</code>, <code>int()</code>, <code>float()</code>, <code>sum()</code>, <code>min()</code>, <code>max()</code>, <code>abs()</code>, <code>round()</code>, <code>sorted()</code></p>
+
+      <h3>Reglas de sintaxis</h3>
+      <ul>
+        <li>Indentación: 4 espacios (no tabs)</li>
+        <li>Bloques terminan con <code>:</code></li>
+        <li>Variables se declaran con <code>var</code></li>
+        <li>Comentarios con <code>#</code></li>
+      </ul>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
-   
+
   <script>
     require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
     require(["vs/editor/editor.main"], function () {
       const editor = monaco.editor.create(document.getElementById("editor"), {
-        value: 'var x = 5\nprint(x + 10)',
+        value: `func factorial(n):
+    if n <= 1:
+        return 1
+    else:
+        return n * factorial(n - 1)
+
+var resultado = factorial(5)
+print(resultado)`,
         language: "python",
         theme: "vs-dark",
         automaticLayout: true,
@@ -129,21 +289,63 @@
 
       const runBtn = document.getElementById("runBtn");
       const clearBtn = document.getElementById("clearBtn");
-      const manualBtn = document.getElementById("manualBtn"); // Nuevo ID
+      const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+      const manualBtn = document.getElementById("manualBtn");
       const output = document.getElementById("output");
       const historyDiv = document.getElementById("history");
+      const modal = document.getElementById("modal");
+      const closeModal = document.querySelector(".close-modal");
 
-      // Listener para el botón Manual
-      manualBtn.addEventListener("click", () => {
-        // Redirige a la página del manual, asumiendo que se llama manual.html
-        window.open('manual.html', '_blank'); // Abre en una nueva pestaña
-        // Si quieres que se abra en la misma pestaña, usa: window.location.href = 'manual.html';
+      // --- LINT usando checker.py del servidor ---
+      async function lintCode() {
+        const code = editor.getValue();
+        try {
+          const res = await fetch("/lint", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code })
+          });
+          
+          if (!res.ok) {
+            console.error("Error en /lint:", res.status);
+            return;
+          }
+
+          const data = await res.json();
+
+          // Crear marcadores visuales de Monaco
+          const markers = data.errors.map(err => ({
+            startLineNumber: err.line || 1,
+            endLineNumber: err.line || 1,
+            startColumn: err.column || 1,
+            endColumn: 999,
+            message: err.message,
+            severity: err.severity === 'warning' 
+              ? monaco.MarkerSeverity.Warning 
+              : monaco.MarkerSeverity.Error
+          }));
+
+          monaco.editor.setModelMarkers(editor.getModel(), "lint", markers);
+        } catch (e) {
+          console.error("Error al hacer lint:", e);
+        }
+      }
+
+      // Lint automático con debounce
+      let lintTimeout;
+      editor.onDidChangeModelContent(() => {
+        clearTimeout(lintTimeout);
+        lintTimeout = setTimeout(lintCode, 800);
       });
 
+      // Lint inicial
+      lintCode();
 
+      // --- EJECUTAR usando interpreter.py del servidor ---
       runBtn.addEventListener("click", async () => {
         const code = editor.getValue();
         output.textContent = "⏳ Ejecutando...\n";
+        runBtn.disabled = true;
 
         try {
           const res = await fetch("/run", {
@@ -152,25 +354,91 @@
             body: JSON.stringify({ code })
           });
 
+          if (!res.ok) {
+            throw new Error(`Error del servidor: ${res.status}`);
+          }
+
           const data = await res.json();
           output.textContent = data.output || "Sin salida.";
-        } catch (err) {
-          output.textContent = "❌ Error al conectar con el servidor: " + err;
-        }
 
-        // Guardar historial
-        const entry = document.createElement("div");
-        entry.textContent = code;
-        entry.style.borderBottom = "1px solid #333";
-        historyDiv.prepend(entry);
+          // Agregar al historial
+          addToHistory(code, data.output);
+        } catch (err) {
+          output.textContent = "❌ Error al conectar con el servidor:\n" + err.message;
+        } finally {
+          runBtn.disabled = false;
+        }
       });
 
+      // --- AGREGAR AL HISTORIAL ---
+      function addToHistory(code, result) {
+        const entry = document.createElement("div");
+        entry.className = "history-entry";
+        
+        const timestamp = document.createElement("div");
+        timestamp.className = "history-timestamp";
+        timestamp.textContent = new Date().toLocaleTimeString();
+        
+        const codeDiv = document.createElement("div");
+        codeDiv.className = "history-code";
+        const preview = code.length > 100 ? code.slice(0, 100) + '...' : code;
+        codeDiv.textContent = preview;
+        
+        entry.appendChild(timestamp);
+        entry.appendChild(codeDiv);
+        
+        // Click para restaurar código
+        entry.addEventListener("click", () => {
+          editor.setValue(code);
+          editor.focus();
+        });
+        
+        historyDiv.insertBefore(entry, historyDiv.firstChild);
+
+        // Limitar historial a 20 entradas
+        while (historyDiv.children.length > 20) {
+          historyDiv.removeChild(historyDiv.lastChild);
+        }
+      }
+
+      // --- LIMPIAR SALIDA ---
       clearBtn.addEventListener("click", () => {
-        output.textContent = "";
+        output.textContent = "Listo para ejecutar tu código...";
+        monaco.editor.setModelMarkers(editor.getModel(), "lint", []);
+      });
+
+      // --- LIMPIAR HISTORIAL ---
+      clearHistoryBtn.addEventListener("click", () => {
         historyDiv.innerHTML = "";
+      });
+
+      // --- MODAL DE MANUAL ---
+      manualBtn.addEventListener("click", () => {
+        modal.style.display = "flex";
+      });
+
+      closeModal.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.style.display = "none";
+        }
+      });
+
+      // Atajo de teclado: Ctrl+Enter para ejecutar
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+        runBtn.click();
+      });
+
+      // Atajo de teclado: ESC para cerrar modal
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+        }
       });
     });
   </script>
 </body>
-
 </html>

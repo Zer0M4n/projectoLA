@@ -1,17 +1,29 @@
 import io
 import sys
-import textwrap
 
 # Excepción de control de flujo para manejar la instrucción 'return'
 class ReturnValue(Exception):
     def __init__(self, value):
         self.value = value
 
+class InterpreterError(Exception):
+    """Error del intérprete con información de línea"""
+    def __init__(self, message, line_num=None):
+        self.message = message
+        self.line_num = line_num
+        super().__init__(self.format_message())
+    
+    def format_message(self):
+        if self.line_num:
+            return f"❌ Error en línea {self.line_num}: {self.message}"
+        return f"❌ Error: {self.message}"
+
 class Interpreter:
     def __init__(self):
         self.global_env = {}
         self.functions = {}
         self.output = io.StringIO()
+        self.current_line = 0
 
     def run(self, code):
         sys_stdout = sys.stdout
@@ -50,16 +62,13 @@ class Interpreter:
                 return i
 
             if line.startswith("func "):
-                # Avanzamos 'i' a la línea posterior a la definición.
                 i = self._define_function(lines, i)
                 continue
 
             elif line.startswith("if "):
-                # Avanzamos 'i' a la línea posterior al bloque if/else.
                 i = self._handle_if_else(lines, i, env, base_indent)
                 continue
             
-            # SOLUCIÓN al error: Si la estructura de control no fue consumida, la saltamos.
             elif line.startswith("else:") or line.startswith("elif "):
                 pass 
 
@@ -89,12 +98,10 @@ class Interpreter:
         
         if index < len(lines):
             func_indent = lines[index][0]
-            # Capturamos TODAS las líneas con mayor indentación.
             while index < len(lines) and lines[index][0] >= func_indent:
                 body.append(lines[index])
                 index += 1
         
-        # Ajustar el índice para que apunte a la línea correcta
         if index < len(lines) and lines[index][0] > lines[index-1][0]:
             index -= 1
 
@@ -103,7 +110,6 @@ class Interpreter:
 
     # --- Manejo de IF/ELSE ---
     def _handle_if_else(self, lines, index, env, base_indent):
-        
         indent, line = lines[index]
         condition = line[3:].rstrip(":").strip()
         cond_value = bool(self._eval_expr(condition, env))
@@ -111,12 +117,10 @@ class Interpreter:
         current_index = index + 1
         if_block, else_block = [], []
         
-        # 1. Capturar el bloque IF
         if_indent = 0
         if current_index < len(lines):
             if_indent = lines[current_index][0]
             while current_index < len(lines) and lines[current_index][0] >= if_indent:
-                # CORRECCIÓN CLAVE: Solo agregamos líneas con *mayor* indentación que el 'if'
                 if lines[current_index][0] > indent: 
                     if_block.append(lines[current_index])
                     current_index += 1
@@ -125,7 +129,6 @@ class Interpreter:
 
         index_after_if_block = current_index
 
-        # 2. Capturar el bloque ELSE
         else_indent = 0
         if index_after_if_block < len(lines) and lines[index_after_if_block][1].startswith("else:"):
             current_index = index_after_if_block + 1
@@ -138,17 +141,14 @@ class Interpreter:
                     else:
                         break
 
-        # 3. Ejecutar el bloque correcto
         try:
             if cond_value and if_block:
-                # Usamos la indentación del bloque como base
                 self._execute_block(if_block, env, 0, if_block[0][0])
             elif else_block:
                 self._execute_block(else_block, env, 0, else_block[0][0])
         except ReturnValue as e:
             raise e
         
-        # Devolvemos el índice de la línea después de todo el bloque if/else
         return current_index
 
     # --- Evaluación de expresiones ---
@@ -165,28 +165,32 @@ class Interpreter:
             value = self._eval_expr(return_value_expr, env) 
             raise ReturnValue(value)
         
-        # Configurar el entorno de evaluación: ¡CLAVE para el scoping!
-        func_env = env.copy() # Usa el entorno actual (local o global)
+        # CORRECCIÓN: Crear entorno con variables Y funciones
+        func_env = env.copy()
+        
+        # SOLUCIÓN AL PROBLEMA: Usar una función factory para evitar el problema de closure
+        def make_function_caller(fname):
+            def caller(*args):
+                return self._call_function(fname, list(args))
+            return caller
+        
         for fname in self.functions:
-            func_env[fname] = lambda *args, f=fname: self._call_function(f, list(args))
+            func_env[fname] = make_function_caller(fname)
 
         try:
-            # Usamos func_env, que contiene las variables locales de la función
             return eval(expr, {"__builtins__": safe_builtins}, func_env)
         except ReturnValue as e:
             raise e
         except Exception as e:
-            # El NameError 'nombre' se resuelve al usar el entorno local (func_env)
             raise Exception(f"Error evaluando '{expr}': {e}")
 
     # --- Llamadas a funciones ---
     def _call_function(self, name, arg_values):
         args, body = self.functions[name]
         
-        # CORRECCIÓN DE SCOPING: local_env debe COPIAR el global_env
+        # Crear entorno local con copia del global
         local_env = self.global_env.copy() 
         
-        # Asignación de parámetros
         for i, arg_name in enumerate(args):
             if i < len(arg_values):
                 local_env[arg_name] = arg_values[i]
@@ -196,10 +200,59 @@ class Interpreter:
         try:
             if body:
                 base_indent = body[0][0]
-                # Pasamos local_env para que las líneas se evalúen con los argumentos
                 self._execute_block(body, local_env, 0, base_indent)
             
         except ReturnValue as e:
             return_value = e.value
         
         return return_value
+
+
+# Prueba
+if __name__ == "__main__":
+    print("="*50)
+    print("PRUEBA 1: Factorial recursivo")
+    print("="*50)
+    test_code1 = """func factorial(n):
+    if n <= 1:
+        return 1
+    else:
+        return n * factorial(n - 1)
+
+var resultado = factorial(5)
+print(resultado)"""
+    
+    interp = Interpreter()
+    output = interp.run(test_code1)
+    print("Salida:")
+    print(output)
+    print()
+    
+    print("="*50)
+    print("PRUEBA 2: Variables simples")
+    print("="*50)
+    test_code2 = """var x = 10
+var y = 20
+var suma = x + y
+print(suma)"""
+    
+    interp2 = Interpreter()
+    output2 = interp2.run(test_code2)
+    print("Salida:")
+    print(output2)
+    print()
+    
+    print("="*50)
+    print("PRUEBA 3: Sin recursión")
+    print("="*50)
+    test_code3 = """func doble(n):
+    return n * 2
+
+var numero = 5
+var resultado = doble(numero)
+print(resultado)"""
+    
+    interp3 = Interpreter()
+    output3 = interp3.run(test_code3)
+    print("Salida:")
+    print(output3)
